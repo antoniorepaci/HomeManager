@@ -1,12 +1,12 @@
 # Domain Model - Home Manager
 
-## Panoramica
+## Overview
 
-Home Manager è una Progressive Web App progettata per gestire la vita domestica condivisa in una convivenza. Il modello dati supporta la gestione di liste della spesa, con possibilità di future estensioni per task, note e reminder.
+Home Manager is a Progressive Web App designed to manage shared domestic life within a household. The data model supports shopping list management and is extensible for future tasks, notes and reminders.
 
 ---
 
-## Diagramma ER (Entity-Relationship)
+## ER Diagram (Entity-Relationship)
 
 ```mermaid
 erDiagram
@@ -16,9 +16,9 @@ erDiagram
     
     USER {
         string id PK "UUID"
-        string email UK "Email univoca"
-        string name "Nome dell'utente"
-        string householdId FK "FK a Household"
+        string email UK "Unique email"
+        string name "User name"
+        string householdId FK "FK to Household"
         string role "ENUM: admin, member"
         timestamp createdAt
         timestamp updatedAt
@@ -26,145 +26,140 @@ erDiagram
     
     HOUSEHOLD {
         string id PK "UUID"
-        string name "Nome convivenza"
+        string name "Household name"
         string type "ENUM: couple, family, roommates, custom"
-        json settings "Impostazioni generali"
+        json settings "General settings"
         timestamp createdAt
         timestamp updatedAt
     }
     
     SHOPPING-LIST {
         string id PK "UUID"
-        string householdId FK "FK a Household"
-        string name "Nome lista"
-        boolean archived "Flag archiviazione"
+        string householdId FK "FK to Household"
+        string name "List name"
+        boolean archived "Archival flag"
         timestamp createdAt
         timestamp updatedAt
     }
     
     GROCERY-ITEM {
         string id PK "UUID"
-        string shoppingListId FK "FK a ShoppingList"
-        string name "Nome articolo"
-        decimal quantity "Quantità"
-        string unit "ENUM: kg, l, pz, ..."
-        boolean completed "Stato completamento"
+        string shoppingListId FK "FK to ShoppingList"
+        string name "Item name"
+        decimal quantity "Quantity"
+        string unit "ENUM: kg, l, pcs, ..."
+        boolean completed "Completion status"
         timestamp createdAt
-        timestamp completedAt "Quando marcato come completato"
+        timestamp completedAt "When marked completed"
     }
 ```
 
 ---
 
-## Definizione Entità e Campi
+## Entity and Field Definitions
 
-### User (Utente)
+### User
 
-| Campo | Tipo | Vincoli | Descrizione |
-|-------|------|---------|-------------|
-| id | UUID (PK) | NOT NULL, UNIQUE | Identificatore univoco |
-| email | String | NOT NULL, UNIQUE | Email dell'utente (login) |
-| name | String | NOT NULL | Nome visualizzato |
-| householdId | UUID (FK) | NOT NULL | Riferimento a Household |
-| role | ENUM | DEFAULT 'member' | Ruolo: `admin`, `member` |
-| createdAt | Timestamp | NOT NULL, AUTO | Data creazione |
-| updatedAt | Timestamp | NOT NULL, AUTO | Ultimo aggiornamento |
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| id | UUID (PK) | NOT NULL, UNIQUE | Unique identifier |
+| email | String | NOT NULL, UNIQUE | User's email (login) |
+| name | String | NOT NULL | Display name |
+| householdId | UUID (FK) | NOT NULL | Reference to Household |
+| createdAt | Timestamp | NOT NULL, AUTO | Creation timestamp |
+| updatedAt | Timestamp | NOT NULL, AUTO | Last update timestamp |
 
-**Note:**
-- `email` deve essere univoca a livello globale
-- `role` determina i permessi: admin può aggiungere/rimuovere utenti, member no
-- Un utente può appartenere a un solo Household
+**Notes:**
+- The `email` value must be globally unique.
+- A user may belong to only one household.
 
-### Household (Convivenza)
+### Household
 
-| Campo | Tipo | Vincoli | Descrizione |
-|-------|------|---------|-------------|
-| id | UUID (PK) | NOT NULL, UNIQUE | Identificatore univoco |
-| name | String | NOT NULL | Nome del gruppo (es. "Casa Milano") |
-| type | ENUM | NOT NULL | Tipo: `couple`, `family`, `roommates`, `custom` |
-| settings | JSON | DEFAULT {} | Impostazioni generali (notifiche, valute, preferenze) |
-| createdAt | Timestamp | NOT NULL, AUTO | Data creazione |
-| updatedAt | Timestamp | NOT NULL, AUTO | Ultimo aggiornamento |
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| id | UUID (PK) | NOT NULL, UNIQUE | Unique identifier |
+| name | String | NOT NULL | Group name (e.g. "Milan House") |
+| settings | JSON | DEFAULT {} | General settings (notifications, currency, preferences) |
+| createdAt | Timestamp | NOT NULL, AUTO | Creation timestamp |
+| updatedAt | Timestamp | NOT NULL, AUTO | Last update timestamp |
 
-**Note:**
-- Il `type` è orientativo per personalizzazione futura (es. template diversi)
-- `settings` contiene configurazioni serializzate (es. `{"currency": "EUR", "language": "it"}`)
-- Un Household rappresenta un gruppo di conviventi
+**Notes:**
+- A Household represents a cohabiting group.
 
-### ShoppingList (Lista della Spesa)
+### ShoppingList
 
-| Campo | Tipo | Vincoli | Descrizione |
-|-------|------|---------|-------------|
-| id | UUID (PK) | NOT NULL, UNIQUE | Identificatore univoco |
-| householdId | UUID (FK) | NOT NULL | Riferimento a Household |
-| name | String | NOT NULL | Nome lista (es. "Spesa settimanale") |
-| archived | Boolean | DEFAULT false | Flag archiviazione |
-| createdAt | Timestamp | NOT NULL, AUTO | Data creazione |
-| updatedAt | Timestamp | NOT NULL, AUTO | Ultimo aggiornamento |
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| id | UUID (PK) | NOT NULL, UNIQUE | Unique identifier |
+| householdId | UUID (FK) | NOT NULL | Reference to Household |
+| name | String | NOT NULL | List name (e.g. "Weekly Groceries") |
+| archived | Boolean | DEFAULT false | Archival flag |
+| createdAt | Timestamp | NOT NULL, AUTO | Creation timestamp |
+| updatedAt | Timestamp | NOT NULL, AUTO | Last update timestamp |
 
-**Note:**
-- Una ShoppingList appartiene a un solo Household
-- `archived` permette di conservare liste storiche senza eliminarle
-- Il nome può essere data-based (es. "Spesa Feb 2026") o topic-based (es. "Verdure")
+**Notes:**
+- Each ShoppingList belongs to a single Household.
+- `archived` allows keeping historical lists without deleting them.
+- Name may be date-based ("Feb 2026 groceries") or topic-based ("Vegetables").
 
-### GroceryItem (Articolo della Spesa)
+### GroceryItem
 
-| Campo | Tipo | Vincoli | Descrizione |
-|-------|------|---------|-------------|
-| id | UUID (PK) | NOT NULL, UNIQUE | Identificatore univoco |
-| shoppingListId | UUID (FK) | NOT NULL | Riferimento a ShoppingList |
-| name | String | NOT NULL | Nome articolo (es. "Latte intero 1L") |
-| quantity | Decimal | DEFAULT 1.0 | Quantità |
-| unit | ENUM | DEFAULT 'pz' | Unità: `kg`, `l`, `pz`, `g`, `ml`, `pack` |
-| completed | Boolean | DEFAULT false | Se acquistato/completato |
-| createdAt | Timestamp | NOT NULL, AUTO | Data creazione |
-| completedAt | Timestamp | NULLABLE | Quando marcato come completato |
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| id | UUID (PK) | NOT NULL, UNIQUE | Unique identifier |
+| shoppingListId | UUID (FK) | NOT NULL | Reference to ShoppingList |
+| name | String | NOT NULL | Item name (e.g. "Whole milk 1L") |
+| quantity | Decimal | DEFAULT 1.0 | Quantity |
+| unit | ENUM | DEFAULT 'pz' | Unit: `kg`, `l`, `pcs`, `g`, `ml`, `pack` |
+| completed | Boolean | DEFAULT false | Whether purchased/completed |
+| createdAt | Timestamp | NOT NULL, AUTO | Creation timestamp |
+| completedAt | Timestamp | NULLABLE | When marked completed |
 
-**Note:**
-- Un GroceryItem appartiene a una sola ShoppingList
-- La combinazione `quantity + unit` fornisce contesto completo (es. "2 kg di mele")
-- `completedAt` è automaticamente impostato quando `completed` passa a true
-- Gli item completati rimangono nella lista per tracciamento (non eliminati)
+**Notes:**
+- A GroceryItem belongs to a single ShoppingList.
+- The `quantity + unit` pair provides full context (e.g. "2 kg of apples").
+- `completedAt` is set automatically when `completed` becomes true.
+- Completed items remain in the list for tracking (not removed).
 
 ---
 
-## Invarianti e Regole di Integrità
+## Invariants and Integrity Rules
 
-### Vincoli di Integrità Referenziale
+### Referential Integrity Constraints
 
-1. **User ↔ Household**: Ogni User deve riferire un Household valido
-   - Eliminazione Household: cascata → Disattiva o migra users (TBD)
-   - Elimina un User non invalida il Household
+1. **User ↔ Household**: every User must reference a valid Household.
+   - Deleting a Household cascades: users are disabled or migrated (TBD).
+   - Deleting a User does not invalidate the Household.
 
-2. **ShoppingList ↔ Household**: Ogni lista deve appartenere a un Household valido
-   - Eliminazione Household: cascata → Elimina liste associate
+2. **ShoppingList ↔ Household**: every list must belong to a valid Household.
+   - Deleting a Household cascades: associated lists are deleted.
 
-3. **GroceryItem ↔ ShoppingList**: Ogni item deve appartenere a una lista valida
-   - Eliminazione ShoppingList: cascata → Elimina items associati
+3. **GroceryItem ↔ ShoppingList**: every item must belong to a valid list.
+   - Deleting a ShoppingList cascades: associated items are deleted.
 
-### Regole di Autorizzazione
+### Authorization Rules
 
-1. **User nel Household**: Solo utenti appartenenti a un Household possono modificare liste e item
+1. **User in Household**: only users belonging to a Household can modify that household's lists and items.
 2. **Admin vs Member**:
-   - **Admin**: Gestione completa di utenti, liste, item
-   - **Member**: Gestione oppure only lettura items. Consenta creare/modificare/completare item ma non eliminarli
-3. **Soft Delete**: Les liste e gli item non vengono mai eliminate permanentemente, ma marcate come `archived` o `deleted` (tramite soft delete timestamp se necessario)
+   - **Admin**: full management of users, lists, items.
+   - **Member**: can create/modify/complete items but not delete them.
+3. **Soft Delete**: lists and items are never permanently removed; they are marked `archived` or `deleted` (via a timestamp) instead.
 
-### Regole di Business
+### Business Rules
 
-1. **Unicità Email**: Nessun duplicato email a livello di sistema
-2. **Unicità Household per User**: Un user può appartenere a un solo Household (estensioni future potrebbero permettere multiple affiliazioni)
-3. **Quantità Positiva**: La quantità di un item deve essere > 0
-4. **Validazione Unit**: L'unità deve essere nella lista predefinita
-5. **Single Household Owner**: Almeno un admin deve esistere per Household (gestito a livello di business logic)
+1. **Email Uniqueness**: no duplicate emails in the system.
+2. **Single Household per User**: one household per user (future versions may allow multiple memberships).
+3. **Positive Quantity**: item quantity must be > 0.
+4. **Unit Validation**: unit value must come from predefined list.
+5. **Household Admin Required**: at least one admin must exist per household (enforced in business logic).
 
 ---
 
-## Estensioni Future
+## Future Extensions
 
-### Fase 2: Task Management
+### Phase 2: Task Management
 
-Aggiungere entità `Task` e `TaskList`:
+Add entities `Task` and `TaskList`:
 
 ```
 TASK-LIST {
@@ -189,11 +184,11 @@ TASK {
 }
 ```
 
-**Relazioni**: Household → TaskList → Task
+**Relationships**: Household → TaskList → Task
 
-### Fase 3: Note e Memo
+### Phase 3: Notes and Memos
 
-Aggiungere entità `Note`:
+Add `Note` entity:
 
 ```
 NOTE {
@@ -209,9 +204,9 @@ NOTE {
 }
 ```
 
-### Fase 4: Reminder e Notifiche
+### Phase 4: Reminders and Notifications
 
-Aggiungere entità `Reminder`:
+Add `Reminder` entity:
 
 ```
 REMINDER {
@@ -229,41 +224,41 @@ REMINDER {
 
 ---
 
-## Considerazioni Architetturali
+## Architectural Considerations
 
-### Partizione dei Dati
+### Data Partitioning
 
-- **Per Household**: Tutte le liste e i task appartengono a un Household, facilitando isolamento dati multi-tenant
-- **Scalabilità**: Possibile implementare sharding per Household su database distribuito
+- **By Household**: all lists and tasks belong to a Household, enabling multi‑tenant isolation.
+- **Scalability**: sharding by householdId is a possible future step in a distributed database.
 
-### Audit e Compliance
+### Audit and Compliance
 
-- **Timestamps**: `createdAt` e `updatedAt` per tracciamento completo
-- **Soft Delete**: Items e liste non eliminati ma marcati come archived
-- **User Tracking**: Futuro: aggiungere `createdBy`, `updatedBy` per audit trail
+- **Timestamps**: `createdAt` and `updatedAt` for full change tracking.
+- **Soft Delete**: items and lists marked archived rather than removed.
+- **User Tracking**: future addition of `createdBy`, `updatedBy` for audit trails.
 
 ### Performance
 
-- **Indici Suggeriti**:
+- **Suggested Indexes**:
   - `User.email` (UNIQUE)
   - `User.householdId` (FK)
   - `ShoppingList.householdId` (FK)
   - `GroceryItem.shoppingListId` (FK)
-  - `GroceryItem.completed` (per query rapide su item non completati)
+  - `GroceryItem.completed` (for fast queries on incomplete items)
 
-- **Denormalizzazione (Futura)**:
-  - Cache del count items completati in ShoppingList
-  - Cache dell'ultimo aggiornamento per sincronizzazione real-time
+- **Denormalization (Future)**:
+  - cache count of completed items in ShoppingList.
+  - cache last update timestamp for real‑time sync.
 
-### Sincronizzazione PWA
+### PWA Synchronization
 
-- **Offline First**: Supportare CouchDB o IndexedDB per sincronizzazione offline
-- **Conflict Resolution**: Timestamp-based merge per conflitti di modifica concorrente
-- **Change Feed**: Tracciare versioni per delta sync
+- **Offline First**: support CouchDB or IndexedDB for offline sync.
+- **Conflict Resolution**: timestamp‑based merge for concurrent edits.
+- **Change Feed**: track versions for delta sync.
 
 ---
 
-## Diagramma Relazionale Fisica (pseudo-SQL)
+## Physical Relational Diagram (pseudo‑SQL)
 
 ```sql
 CREATE TABLE households (
@@ -315,22 +310,3 @@ CREATE TABLE grocery_items (
 );
 ```
 
----
-
-## Mappatura a Tecnologie PWA
-
-### Backend Suggerito
-- **Database**: MySQL/PostgreSQL (relazionale) oppure Firebase/MongoDB (NoSQL)
-- **API**: RESTful o GraphQL
-- **Auth**: JWT con refresh tokens
-- **Real-time**: WebSocket per sincronizzazione live tra dispositivi
-
-### Frontend Suggerito
-- **Storage Offline**: IndexedDB (built-in browser) o Realm Web
-- **Sync**: Background Sync API o Periodic Sync API
-- **State Management**: Redux, Zustand, o Tanstack Query
-
-### Infrastructure
-- **Hosting**: Vercel, Netlify, o AWS S3 + CloudFront
-- **CDN**: Per asset statici
-- **Monitoraggio**: Sentry per error tracking
